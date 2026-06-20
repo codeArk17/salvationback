@@ -1,0 +1,7 @@
+{
+  "delay": 1500,
+  "signal": "SIGTERM",
+  "watch": ["."],
+  "ignore": ["node_modules", "uploads", "media"],
+  "ext": "js,json"
+}
