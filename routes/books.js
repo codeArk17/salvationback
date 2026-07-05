@@ -4,7 +4,7 @@ const Book      = require('../Book');
 const adminAuth = require('../adminAuth');
 const { uploadBookFiles } = require('../upload');
 
-const SERVER_BASE = process.env.SERVER_URL || 'http://localhost:5000';
+const SERVER_BASE = process.env.SERVER_URL || 'https://salvationback.onrender.com';
 
 // ─── Public: list all books ──────────────────────────────────────────────────
 router.get('/', async (req, res) => {

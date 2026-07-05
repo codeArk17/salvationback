@@ -4,7 +4,7 @@ const Content   = require('../Content');
 const adminAuth = require('../adminAuth');
 const { uploadSingle } = require('../upload');
 
-const SERVER_BASE = process.env.SERVER_URL || '';
+const SERVER_BASE = process.env.SERVER_URL || 'https://salvationback.onrender.com';
 
 // Public: list all content items
 router.get('/', async (req, res) => {
