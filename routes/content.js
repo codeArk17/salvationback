@@ -3,6 +3,7 @@ const router    = express.Router();
 const Content   = require('../Content');
 const adminAuth = require('../adminAuth');
 const { uploadSingle } = require('../upload');
+const { uploadToCloudinary } = require('../cloudinary');
 
 const SERVER_BASE = process.env.SERVER_URL || 'https://salvationback.onrender.com';
 
@@ -27,7 +28,7 @@ router.post('/', adminAuth, async (req, res) => {
     const body = req.body;
     // If a file was uploaded use its URL, otherwise use the text url field
     const image = req.file
-      ? `${SERVER_BASE}/uploads/${req.file.filename}`
+      ? await uploadToCloudinary(req.file.buffer, 'content', 'image')
       : (body.image || '');
 
     const item = await Content.create({
@@ -53,7 +54,7 @@ router.put('/:id', adminAuth, async (req, res) => {
     const update = { ...body };
 
     if (req.file) {
-      update.image = `${SERVER_BASE}/uploads/${req.file.filename}`;
+      update.image = await uploadToCloudinary(req.file.buffer, 'content', 'image');
     }
     // Remove internal fields that shouldn't overwrite the doc
     delete update._id;

@@ -1,11 +1,9 @@
 const express     = require('express');
 const router      = express.Router();
-const path        = require('path');
 const GalleryItem = require('../Gallery');
 const adminAuth   = require('../adminAuth');
 const { uploadSingle } = require('../upload');
-
-const SERVER_BASE = process.env.SERVER_URL || 'https://salvationback.onrender.com';
+const { uploadToCloudinary } = require('../cloudinary');
 
 // ─── Public: list gallery items ──────────────────────────────────────────────
 router.get('/', async (req, res) => {
@@ -19,26 +17,18 @@ router.get('/', async (req, res) => {
 });
 
 // ─── Admin: add gallery item ──────────────────────────────────────────────────
-// Accepts multipart/form-data with a 'file' field for local upload,
-// OR plain JSON / form field 'url' for YouTube embed / external URL.
 router.post('/', adminAuth, async (req, res) => {
-  try {
-    await uploadSingle(req, res);
-  } catch (err) {
-    console.error('Multer error:', err.message);
+  try { await uploadSingle(req, res); } catch (err) {
     return res.status(400).json({ error: err.message });
   }
-
-  console.log('Gallery POST — req.file:', req.file);
-  console.log('Gallery POST — req.body:', req.body);
-  console.log('Gallery POST — content-type:', req.headers['content-type']);
 
   try {
     let url;
 
     if (req.file) {
-      // Local file — build the public URL served by Express static middleware
-      url = `${SERVER_BASE}/uploads/${req.file.filename}`;
+      // Upload buffer to Cloudinary
+      const resourceType = req.file.mimetype.startsWith('video/') ? 'video' : 'image';
+      url = await uploadToCloudinary(req.file.buffer, 'gallery', resourceType);
     } else if (req.body.url) {
       url = req.body.url;
     } else {
@@ -49,8 +39,7 @@ router.post('/', adminAuth, async (req, res) => {
       (req.file && req.file.mimetype.startsWith('video/') ? 'video' : 'photo');
 
     const item = await GalleryItem.create({
-      url,
-      mediaType,
+      url, mediaType,
       title:    req.body.title    || '',
       category: req.body.category || 'General',
     });
@@ -66,12 +55,6 @@ router.delete('/:id', adminAuth, async (req, res) => {
   try {
     const item = await GalleryItem.findByIdAndDelete(req.params.id);
     if (!item) return res.status(404).json({ error: 'Gallery item not found.' });
-    // Optionally delete file from disk if it's a local upload
-    if (item.url && item.url.includes('/uploads/')) {
-      const fs       = require('fs');
-      const filePath = require('path').join(__dirname, '..', 'uploads', path.basename(item.url));
-      fs.unlink(filePath, () => {}); // ignore errors if file already gone
-    }
     res.json({ message: 'Gallery item deleted.' });
   } catch (err) {
     res.status(500).json({ error: err.message });

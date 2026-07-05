@@ -3,6 +3,7 @@ const router    = express.Router();
 const Book      = require('../Book');
 const adminAuth = require('../adminAuth');
 const { uploadBookFiles } = require('../upload');
+const { uploadToCloudinary } = require('../cloudinary');
 
 const SERVER_BASE = process.env.SERVER_URL || 'https://salvationback.onrender.com';
 
@@ -30,12 +31,12 @@ router.post('/', adminAuth, async (req, res) => {
 
     let coverUrl = body.coverUrl || '';
     if (req.files && req.files.coverFile) {
-      coverUrl = `${SERVER_BASE}/uploads/${req.files.coverFile[0].filename}`;
+      coverUrl = await uploadToCloudinary(req.files.coverFile[0].buffer, 'books', 'image');
     }
 
     let downloadUrl = body.downloadUrl || '#';
     if (req.files && req.files.downloadFile) {
-      downloadUrl = `${SERVER_BASE}/uploads/${req.files.downloadFile[0].filename}`;
+      downloadUrl = await uploadToCloudinary(req.files.downloadFile[0].buffer, 'books', 'raw');
     }
 
     let previewChapters = [];
@@ -72,10 +73,10 @@ router.put('/:id', adminAuth, async (req, res) => {
     const update = { ...body };
 
     if (req.files && req.files.coverFile) {
-      update.coverUrl = `${SERVER_BASE}/uploads/${req.files.coverFile[0].filename}`;
+      update.coverUrl = await uploadToCloudinary(req.files.coverFile[0].buffer, 'books', 'image');
     }
     if (req.files && req.files.downloadFile) {
-      update.downloadUrl = `${SERVER_BASE}/uploads/${req.files.downloadFile[0].filename}`;
+      update.downloadUrl = await uploadToCloudinary(req.files.downloadFile[0].buffer, 'books', 'raw');
     }
     if (body.previewChapters) {
       try { update.previewChapters = JSON.parse(body.previewChapters); }
