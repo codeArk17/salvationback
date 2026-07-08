@@ -1,11 +1,28 @@
 const express   = require('express');
 const router    = express.Router();
+const path      = require('path');
+const fs        = require('fs');
 const Content   = require('../Content');
 const adminAuth = require('../adminAuth');
 const { uploadSingle } = require('../upload');
 const { uploadToCloudinary } = require('../cloudinary');
 
 const SERVER_BASE = process.env.SERVER_URL || 'https://salvationback.onrender.com';
+const UPLOAD_DIR  = path.join(__dirname, '..', 'uploads');
+const CLOUDINARY_CONFIGURED =
+  process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_CLOUD_NAME !== 'YOUR_CLOUD_NAME';
+
+async function saveFile(buffer, originalname) {
+  if (CLOUDINARY_CONFIGURED) {
+    return await uploadToCloudinary(buffer, 'content', 'image');
+  }
+  if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  const safe     = originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const filename = `${Date.now()}-${safe}`;
+  fs.writeFileSync(path.join(UPLOAD_DIR, filename), buffer);
+  return `${SERVER_BASE}/uploads/${filename}`;
+}
 
 // Public: list all content items
 router.get('/', async (req, res) => {
@@ -28,7 +45,7 @@ router.post('/', adminAuth, async (req, res) => {
     const body = req.body;
     // If a file was uploaded use its URL, otherwise use the text url field
     const image = req.file
-      ? await uploadToCloudinary(req.file.buffer, 'content', 'image')
+      ? await saveFile(req.file.buffer, req.file.originalname)
       : (body.image || '');
 
     const item = await Content.create({
@@ -54,7 +71,7 @@ router.put('/:id', adminAuth, async (req, res) => {
     const update = { ...body };
 
     if (req.file) {
-      update.image = await uploadToCloudinary(req.file.buffer, 'content', 'image');
+      update.image = await saveFile(req.file.buffer, req.file.originalname);
     }
     // Remove internal fields that shouldn't overwrite the doc
     delete update._id;

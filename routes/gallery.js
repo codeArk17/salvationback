@@ -1,9 +1,36 @@
 const express     = require('express');
 const router      = express.Router();
+const path        = require('path');
+const fs          = require('fs');
 const GalleryItem = require('../Gallery');
 const adminAuth   = require('../adminAuth');
 const { uploadSingle } = require('../upload');
-const { uploadToCloudinary } = require('../cloudinary');
+
+const SERVER_BASE = process.env.SERVER_URL || 'https://salvationback.onrender.com';
+const UPLOAD_DIR  = path.join(__dirname, '..', 'uploads');
+
+function isCloudinaryConfigured() {
+  return (
+    process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_CLOUD_NAME !== 'YOUR_CLOUD_NAME' &&
+    process.env.CLOUDINARY_API_KEY &&
+    process.env.CLOUDINARY_API_SECRET
+  );
+}
+
+async function storeFile(buffer, mimetype, originalname) {
+  if (isCloudinaryConfigured()) {
+    const { uploadToCloudinary } = require('../cloudinary');
+    const resourceType = mimetype.startsWith('video/') ? 'video' : 'image';
+    return await uploadToCloudinary(buffer, 'gallery', resourceType);
+  }
+  // Local fallback
+  if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  const safe     = originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const filename = `${Date.now()}-${safe}`;
+  fs.writeFileSync(path.join(UPLOAD_DIR, filename), buffer);
+  return `${SERVER_BASE}/uploads/${filename}`;
+}
 
 // ─── Public: list gallery items ──────────────────────────────────────────────
 router.get('/', async (req, res) => {
@@ -23,12 +50,13 @@ router.post('/', adminAuth, async (req, res) => {
   }
 
   try {
+    console.log('Gallery POST — Cloudinary configured:', isCloudinaryConfigured());
+    console.log('Gallery POST — has file:', !!req.file, '— body.url:', req.body.url);
+
     let url;
 
     if (req.file) {
-      // Upload buffer to Cloudinary
-      const resourceType = req.file.mimetype.startsWith('video/') ? 'video' : 'image';
-      url = await uploadToCloudinary(req.file.buffer, 'gallery', resourceType);
+      url = await storeFile(req.file.buffer, req.file.mimetype, req.file.originalname);
     } else if (req.body.url) {
       url = req.body.url;
     } else {
@@ -46,6 +74,7 @@ router.post('/', adminAuth, async (req, res) => {
 
     res.status(201).json(item);
   } catch (err) {
+    console.error('Gallery POST error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -55,6 +84,11 @@ router.delete('/:id', adminAuth, async (req, res) => {
   try {
     const item = await GalleryItem.findByIdAndDelete(req.params.id);
     if (!item) return res.status(404).json({ error: 'Gallery item not found.' });
+    if (item.url && item.url.includes('/uploads/')) {
+      const filename = path.basename(item.url);
+      const filepath = path.join(UPLOAD_DIR, filename);
+      if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
+    }
     res.json({ message: 'Gallery item deleted.' });
   } catch (err) {
     res.status(500).json({ error: err.message });
