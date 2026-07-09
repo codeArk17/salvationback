@@ -8,7 +8,10 @@ const fileFilter = (_req, file, cb) => {
   const allowed = [
     'image/jpeg', 'image/png', 'image/webp', 'image/gif',
     'video/mp4', 'video/webm', 'video/ogg', 'video/quicktime',
-    'application/pdf', 'application/epub+zip',
+    'application/pdf',
+    'application/epub+zip',
+    'application/x-mobipocket-ebook', // .mobi
+    'application/octet-stream',        // generic binary (some .epub/.mobi uploads)
   ];
   if (allowed.includes(file.mimetype)) cb(null, true);
   else cb(new Error(`File type not allowed: ${file.mimetype}`));
