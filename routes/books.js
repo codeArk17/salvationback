@@ -71,6 +71,9 @@ router.put('/:id', adminAuth, async (req, res) => {
   try {
     const body   = req.body;
     const update = { ...body };
+    delete update._id;
+    delete update.id;
+    delete update.__v;
 
     if (req.files && req.files.coverFile) {
       update.coverUrl = await uploadToCloudinary(req.files.coverFile[0].buffer, 'books', 'image');

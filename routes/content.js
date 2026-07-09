@@ -69,6 +69,9 @@ router.put('/:id', adminAuth, async (req, res) => {
   try {
     const body   = req.body;
     const update = { ...body };
+    delete update._id;
+    delete update.id;
+    delete update.__v;
 
     if (req.file) {
       update.image = await saveFile(req.file.buffer, req.file.originalname);
