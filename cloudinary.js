@@ -6,7 +6,7 @@ cloudinary.config({
   api_key:    process.env.CLOUDINARY_API_KEY    || 'YOUR_API_KEY',
   api_secret: process.env.CLOUDINARY_API_SECRET || 'YOUR_API_SECRET',
   secure: true,
-  timeout: 120000, // 2 minutes — handles slow connections and large files
+  timeout: 180000, // 3 minutes
 });
 
 /**
@@ -22,7 +22,8 @@ function uploadToCloudinary(buffer, folder = 'uploads', resourceType = 'auto') {
       {
         folder,
         resource_type: resourceType,
-        timeout: 120000,
+        timeout: 180000,
+        chunk_size: 6000000, // 6MB chunks for large files
       },
       (error, result) => {
         if (error) return reject(error);

@@ -5,6 +5,7 @@ const fs          = require('fs');
 const GalleryItem = require('../Gallery');
 const adminAuth   = require('../adminAuth');
 const { uploadSingle } = require('../upload');
+const { uploadToCloudinary } = require('../cloudinary');
 
 const SERVER_BASE = process.env.SERVER_URL || 'https://salvationback.onrender.com';
 const UPLOAD_DIR  = path.join(__dirname, '..', 'uploads');
@@ -18,17 +19,30 @@ function isCloudinaryConfigured() {
   );
 }
 
+async function compressIfImage(buffer, mimetype) {
+  if (!mimetype.startsWith('image/')) return buffer;
+  try {
+    const sharp = require('sharp');
+    return await sharp(buffer)
+      .resize({ width: 1920, withoutEnlargement: true })
+      .jpeg({ quality: 82 })
+      .toBuffer();
+  } catch {
+    return buffer;
+  }
+}
+
 async function storeFile(buffer, mimetype, originalname) {
+  const processedBuffer = await compressIfImage(buffer, mimetype);
   if (isCloudinaryConfigured()) {
-    const { uploadToCloudinary } = require('../cloudinary');
     const resourceType = mimetype.startsWith('video/') ? 'video' : 'image';
-    return await uploadToCloudinary(buffer, 'gallery', resourceType);
+    return await uploadToCloudinary(processedBuffer, 'gallery', resourceType);
   }
   // Local fallback
   if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
   const safe     = originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
   const filename = `${Date.now()}-${safe}`;
-  fs.writeFileSync(path.join(UPLOAD_DIR, filename), buffer);
+  fs.writeFileSync(path.join(UPLOAD_DIR, filename), processedBuffer);
   return `${SERVER_BASE}/uploads/${filename}`;
 }
 
