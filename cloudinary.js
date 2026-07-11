@@ -18,13 +18,21 @@ cloudinary.config({
  */
 function uploadToCloudinary(buffer, folder = 'uploads', resourceType = 'auto') {
   return new Promise((resolve, reject) => {
+    const options = {
+      folder,
+      resource_type: resourceType,
+      timeout: 180000,
+      chunk_size: 20000000, // 20MB chunks — much faster for large videos
+    };
+
+    // For videos, use async upload with quality auto to speed things up
+    if (resourceType === 'video') {
+      options.quality = 'auto';
+      options.eager_async = true;
+    }
+
     const stream = cloudinary.uploader.upload_stream(
-      {
-        folder,
-        resource_type: resourceType,
-        timeout: 180000,
-        chunk_size: 6000000, // 6MB chunks for large files
-      },
+      options,
       (error, result) => {
         if (error) return reject(error);
         resolve(result.secure_url);

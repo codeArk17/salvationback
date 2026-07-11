@@ -78,6 +78,7 @@ app.use('/api/contact',     require('./routes/contact'));
 app.use('/api/volunteers',  require('./routes/volunteers'));
 app.use('/api/gallery',     require('./routes/gallery'));
 app.use('/api/paystack',    require('./routes/paystack'));
+app.use('/api/squad',       require('./routes/squad'));
 app.use('/api/download',    require('./routes/download'));
 app.use('/api/sermons',     require('./routes/sermons'));
 app.use('/api/team',        require('./routes/team'));
@@ -87,7 +88,7 @@ app.get('/', (_req, res) => res.json({ status: 'Salvation Series API running ✅
 
 // ─── MongoDB + Server start ───────────────────────────────────
 const PORT      = process.env.PORT      || 5000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://dami594933:salvation2024@cluster0.rocypvr.mongodb.net/salvationDB?appName=Cluster0';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://dami594933:salvation2024@cluster0.rocypvr.mongodb.net/salvationDB?appName=Cluster0&serverSelectionTimeoutMS=10000&connectTimeoutMS=10000';
 
 mongoose
   .connect(MONGO_URI)

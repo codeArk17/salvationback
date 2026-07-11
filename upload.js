@@ -21,7 +21,7 @@ const fileFilter = (_req, file, cb) => {
 const _uploadSingle = multer({
   storage:    multer.memoryStorage(),
   fileFilter,
-  limits: { fileSize: 200 * 1024 * 1024 },
+  limits: { fileSize: 500 * 1024 * 1024 }, // 500MB for large videos
 }).single('file');
 
 // Multi-field upload — coverFile + downloadFile (for books)
