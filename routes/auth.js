@@ -20,4 +20,26 @@ router.post('/login', (req, res) => {
   return res.json({ token: ADMIN_PASSWORD });
 });
 
+// Change admin password
+router.post('/change-password', (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  const token = req.headers['x-admin-token'];
+
+  // Verify current password
+  if (!token || token !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Unauthorized.' });
+  }
+  if (!oldPassword || oldPassword !== ADMIN_PASSWORD) {
+    return res.status(400).json({ error: 'Current password is incorrect.' });
+  }
+  if (!newPassword || newPassword.length < 6) {
+    return res.status(400).json({ error: 'New password must be at least 6 characters.' });
+  }
+
+  // Update the in-memory password for this session
+  process.env.ADMIN_PASSWORD = newPassword;
+
+  return res.json({ message: 'Password changed successfully. Update ADMIN_PASSWORD in your .env and Render environment variables to make it permanent.' });
+});
+
 module.exports = router;
