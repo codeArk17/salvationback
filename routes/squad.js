@@ -12,7 +12,7 @@ const Book    = require('../Book');
 
 const SQUAD_SECRET  = process.env.SQUAD_SECRET_KEY || '';
 const SQUAD_BASE    = process.env.SQUAD_ENV === 'live'
-  ? 'https://api.squadco.com'
+  ? 'https://api-d.squadco.com'
   : 'https://sandbox-api-d.squadco.com';
 
 // ── Helper: verify transaction with Squad ───────────────────────────────────
