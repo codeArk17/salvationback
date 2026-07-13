@@ -5,7 +5,10 @@ const cors       = require('cors');
 const http       = require('http');
 const { Server } = require('socket.io');
 const path       = require('path');
-const nms        = require('./mediaServer'); // RTMP → HLS transcoder
+const nms        = (() => {
+  try { return require('./mediaServer'); }
+  catch(e) { console.warn('⚠️ mediaServer not available:', e.message); return null; }
+})();
 
 const app    = express();
 const server = http.createServer(app); // wrap express with http for Socket.io
@@ -97,7 +100,7 @@ mongoose
     server.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
 
     // Only start RTMP/HLS media server in local development
-    if (process.env.NODE_ENV !== 'production' && !process.env.DISABLE_MEDIA_SERVER) {
+    if (nms && process.env.NODE_ENV !== 'production' && !process.env.DISABLE_MEDIA_SERVER) {
       try {
         nms.run();
         console.log('📡 RTMP server on rtmp://localhost:1935/live');
