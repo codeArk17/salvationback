@@ -96,10 +96,16 @@ mongoose
     console.log('✅ MongoDB connected');
     server.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
 
-    // Start RTMP/HLS media server
-    nms.run();
-    console.log('📡 RTMP server on rtmp://localhost:1935/live');
-    console.log('📺 HLS  stream at http://localhost:8000/live/<stream-key>/index.m3u8');
+    // Only start RTMP/HLS media server in local development
+    if (process.env.NODE_ENV !== 'production' && !process.env.DISABLE_MEDIA_SERVER) {
+      try {
+        nms.run();
+        console.log('📡 RTMP server on rtmp://localhost:1935/live');
+        console.log('📺 HLS  stream at http://localhost:8000/live/<stream-key>/index.m3u8');
+      } catch (e) {
+        console.warn('⚠️ Media server failed to start (non-fatal):', e.message);
+      }
+    }
   })
   .catch((err) => {
     console.error('❌ MongoDB connection error:', err.message);
